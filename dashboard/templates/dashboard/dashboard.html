@@ -48,48 +48,23 @@
     <div class="container mt-5">
         <h1 class="text-center mb-5">Products</h1>
 
-        <!-- Search and Filter Bar -->
+        <!-- Search Bar -->
         <div class="row mb-4">
-            <!-- Search Bar -->
-            <div class="col-md-6">
+            <div class="col-md-6 offset-md-3">
                 <input type="text" id="searchInput" class="form-control" placeholder="Search for products...">
-            </div>
-
-            <!-- Filter Section -->
-            <div class="col-md-6">
-                <div class="input-group">
-                    <!-- Select Field (End_of_Sale, End_of_Support, Notification) -->
-                    <select id="filterField" class="form-select">
-                        <option value="">Select Field</option>
-                        <option value="End_of_Sale">End of Sale</option>
-                        <option value="End_of_Support">End of Support</option>
-                        <option value="Notification">Notification</option>
-                    </select>
-
-                    <!-- Select Condition (Equal, Greater Than, Less Than) -->
-                    <select id="filterCondition" class="form-select">
-                        <option value="">Condition</option>
-                        <option value="equal">Equal</option>
-                        <option value="greater">After</option>
-                        <option value="less">Before</option>
-                    </select>
-
-                    <!-- Date Input -->
-                    <input type="month" id="filterDate" class="form-control">
-
-                    <!-- Filter Button -->
-                    <button id="filterButton" class="btn btn-primary">Filter</button>
-                </div>
             </div>
         </div>
 
         <!-- Product Cards -->
         <div class="row" id="productGrid">
             {% for product in products %}
-                <div class="col-lg-4 col-md-6 product-item" data-product="{{ product.Product }}"
-                     data-end-of-sale="{{ product.End_of_Sale }}"
-                     data-end-of-support="{{ product.End_of_Support }}"
-                     data-notification="{{ product.Notification }}">
+                <div class="col-lg-4 col-md-6 product-item" 
+                    data-id="{{ product.ID }}"
+                    data-product="{{ product.Product }}"
+                    data-end-of-sale="{{ product.End_of_Sale }}"
+                    data-end-of-support="{{ product.End_of_Support }}"
+                    data-recommended-successor="{{ product.Recommended_Successor_Product }}"
+                    data-notification="{{ product.Notification }}">
                     <div class="product-card" data-bs-toggle="modal" data-bs-target="#productModal"
                          data-end-of-sale="{{ product.End_of_Sale }}"
                          data-end-of-support="{{ product.End_of_Support }}"
@@ -126,102 +101,50 @@
         var productModal = document.getElementById('productModal');
         productModal.addEventListener('show.bs.modal', function (event) {
             var button = event.relatedTarget; // Button that triggered the modal
+
+            // Extract data attributes from the clicked product card
             var endOfSale = button.getAttribute('data-end-of-sale');
             var endOfSupport = button.getAttribute('data-end-of-support');
             var recommendedSuccessor = button.getAttribute('data-recommended-successor');
             var notification = button.getAttribute('data-notification');
 
-            // Update the modal's content
-            var endOfSaleSpan = productModal.querySelector('#end-of-sale');
-            var endOfSupportSpan = productModal.querySelector('#end-of-support');
-            var recommendedSuccessorSpan = productModal.querySelector('#recommended-successor');
-            var notificationSpan = productModal.querySelector('#notification');
-
-            endOfSaleSpan.textContent = endOfSale;
-            endOfSupportSpan.textContent = endOfSupport;
-            recommendedSuccessorSpan.textContent = recommendedSuccessor;
-            notificationSpan.textContent = notification;
+            // Update the modal's content with the extracted data
+            productModal.querySelector('#end-of-sale').textContent = endOfSale;
+            productModal.querySelector('#end-of-support').textContent = endOfSupport;
+            productModal.querySelector('#recommended-successor').textContent = recommendedSuccessor;
+            productModal.querySelector('#notification').textContent = notification;
         });
 
-        // Search and Filter Script
+        // Search Script for all columns
         const searchInput = document.getElementById('searchInput');
-        const filterField = document.getElementById('filterField');
-        const filterCondition = document.getElementById('filterCondition');
-        const filterDate = document.getElementById('filterDate');
-        const filterButton = document.getElementById('filterButton');
         const productItems = document.querySelectorAll('.product-item');
 
-        function filterProducts() {
+        searchInput.addEventListener('input', function () {
             const searchQuery = searchInput.value.toLowerCase();
-            const selectedField = filterField.value;
-            const selectedCondition = filterCondition.value;
-            const filterDateValue = filterDate.value;
-        
-            console.log("Search Query:", searchQuery);
-            console.log("Selected Field:", selectedField);
-            console.log("Selected Condition:", selectedCondition);
-            console.log("Filter Date Value:", filterDateValue);
-        
+
             productItems.forEach(item => {
+                const id = item.getAttribute('data-id').toLowerCase();
                 const productName = item.getAttribute('data-product').toLowerCase();
-                const fieldValue = item.getAttribute(`data-${selectedField.replace('_', '-').toLowerCase()}`);
-        
-                console.log("Product Name:", productName);
-                console.log("Field Value:", fieldValue);
-        
-                // Check if the product matches the search query
-                const matchesSearch = productName.includes(searchQuery);
-        
-                let matchesFilter = true;
-        
-                if (selectedField && selectedCondition && filterDateValue) {
-                    if (fieldValue) {
-                        // Only proceed if fieldValue exists (not null or undefined)
-                        try {
-                            console.log("Field Value Before Split:", fieldValue);
-                            const fieldDateParts = fieldValue.split(" ");  // Split fieldValue (e.g., 'Aug 2021')
-                            console.log("Field Date Parts:", fieldDateParts);
-                            const fieldDate = new Date(`${fieldDateParts[0]} 01, ${fieldDateParts[1]}`);  // Create valid Date object from 'MMM YYYY'
-                            console.log("Field Date:", fieldDate);
-                            const filterDateObj = new Date(filterDateValue + '-01');  // Date from the filter input
-                            console.log("Filter Date Object:", filterDateObj);
-        
-                            switch (selectedCondition) {
-                                case 'equal':
-                                    matchesFilter = fieldDate.getTime() === filterDateObj.getTime();
-                                    break;
-                                case 'greater':
-                                    matchesFilter = fieldDate.getTime() > filterDateObj.getTime();
-                                    break;
-                                case 'less':
-                                    matchesFilter = fieldDate.getTime() < filterDateObj.getTime();
-                                    break;
-                            }
-                            console.log("Matches Filter:", matchesFilter);
-                        } catch (error) {
-                            console.error('Error parsing date:', error);
-                            matchesFilter = false;
-                        }
-                    } else {
-                        matchesFilter = false;  // If fieldValue is null, mark it as no match
-                    }
-                }
-        
-                console.log("Matches Search:", matchesSearch);
-                console.log("Matches Filter:", matchesFilter);
-        
-                if (matchesSearch && matchesFilter) {
+                const endOfSale = item.getAttribute('data-end-of-sale').toLowerCase();
+                const endOfSupport = item.getAttribute('data-end-of-support').toLowerCase();
+                const recommendedSuccessor = item.getAttribute('data-recommended-successor').toLowerCase();
+                const notification = item.getAttribute('data-notification').toLowerCase();
+
+                // Check if the search query matches any of the attributes
+                if (
+                    id.includes(searchQuery) ||
+                    productName.includes(searchQuery) ||
+                    endOfSale.includes(searchQuery) ||
+                    endOfSupport.includes(searchQuery) ||
+                    recommendedSuccessor.includes(searchQuery) ||
+                    notification.includes(searchQuery)
+                ) {
                     item.style.display = 'block';  // Show the product
                 } else {
                     item.style.display = 'none';  // Hide the product
                 }
             });
-        }
-        
-        
-
-        searchInput.addEventListener('input', filterProducts);
-        filterButton.addEventListener('click', filterProducts);
+        });
     </script>
 </body>
 </html>
