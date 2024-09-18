@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Products</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .product-card {
+            cursor: pointer;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px;
+            text-align: center;
+            transition: transform 0.3s ease, background-color 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .product-card:hover {
+            transform: translateY(-5px);
+            background-color: #f1f3f5;
+            box-shadow: 0 8px 12px rgba(0, 0, 0, 0.15);
+        }
+        .product-card h4 {
+            font-size: 1.25rem;
+            color: #007bff;
+        }
+        .modal-header {
+            background-color: #007bff;
+            color: white;
+        }
+        .modal-header h5 {
+            font-size: 1.5rem;
+        }
+        .modal-body p {
+            font-size: 1.1rem;
+        }
+        .btn-close {
+            background-color: white;
+            border: none;
+        }
+        .btn-close:hover {
+            background-color: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center mb-5">Products</h1>
+
+        <!-- Search and Filter Bar -->
+        <div class="row mb-4">
+            <!-- Search Bar -->
+            <div class="col-md-6">
+                <input type="text" id="searchInput" class="form-control" placeholder="Search for products...">
+            </div>
+
+            <!-- Filter Section -->
+            <div class="col-md-6">
+                <div class="input-group">
+                    <!-- Select Field (End_of_Sale, End_of_Support, Notification) -->
+                    <select id="filterField" class="form-select">
+                        <option value="">Select Field</option>
+                        <option value="End_of_Sale">End of Sale</option>
+                        <option value="End_of_Support">End of Support</option>
+                        <option value="Notification">Notification</option>
+                    </select>
+
+                    <!-- Select Condition (Equal, Greater Than, Less Than) -->
+                    <select id="filterCondition" class="form-select">
+                        <option value="">Condition</option>
+                        <option value="equal">Equal</option>
+                        <option value="greater">After</option>
+                        <option value="less">Before</option>
+                    </select>
+
+                    <!-- Date Input -->
+                    <input type="month" id="filterDate" class="form-control">
+
+                    <!-- Filter Button -->
+                    <button id="filterButton" class="btn btn-primary">Filter</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Product Cards -->
+        <div class="row" id="productGrid">
+            {% for product in products %}
+                <div class="col-lg-4 col-md-6 product-item" data-product="{{ product.Product }}"
+                     data-end-of-sale="{{ product.End_of_Sale }}"
+                     data-end-of-support="{{ product.End_of_Support }}"
+                     data-notification="{{ product.Notification }}">
+                    <div class="product-card" data-bs-toggle="modal" data-bs-target="#productModal"
+                         data-end-of-sale="{{ product.End_of_Sale }}"
+                         data-end-of-support="{{ product.End_of_Support }}"
+                         data-recommended-successor="{{ product.Recommended_Successor_Product }}"
+                         data-notification="{{ product.Notification }}">
+                        <h4>{{ product.Product }}</h4>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="productModal" tabindex="-1" aria-labelledby="productModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="productModalLabel">Product Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p><strong>End of Sale:</strong> <span id="end-of-sale"></span></p>
+                    <p><strong>End of Support:</strong> <span id="end-of-support"></span></p>
+                    <p><strong>Recommended Successor Product:</strong> <span id="recommended-successor"></span></p>
+                    <p><strong>Notification:</strong> <span id="notification"></span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Modal Script
+        var productModal = document.getElementById('productModal');
+        productModal.addEventListener('show.bs.modal', function (event) {
+            var button = event.relatedTarget; // Button that triggered the modal
+            var endOfSale = button.getAttribute('data-end-of-sale');
+            var endOfSupport = button.getAttribute('data-end-of-support');
+            var recommendedSuccessor = button.getAttribute('data-recommended-successor');
+            var notification = button.getAttribute('data-notification');
+
+            // Update the modal's content
+            var endOfSaleSpan = productModal.querySelector('#end-of-sale');
+            var endOfSupportSpan = productModal.querySelector('#end-of-support');
+            var recommendedSuccessorSpan = productModal.querySelector('#recommended-successor');
+            var notificationSpan = productModal.querySelector('#notification');
+
+            endOfSaleSpan.textContent = endOfSale;
+            endOfSupportSpan.textContent = endOfSupport;
+            recommendedSuccessorSpan.textContent = recommendedSuccessor;
+            notificationSpan.textContent = notification;
+        });
+
+        // Search and Filter Script
+        const searchInput = document.getElementById('searchInput');
+        const filterField = document.getElementById('filterField');
+        const filterCondition = document.getElementById('filterCondition');
+        const filterDate = document.getElementById('filterDate');
+        const filterButton = document.getElementById('filterButton');
+        const productItems = document.querySelectorAll('.product-item');
+
+        function filterProducts() {
+            const searchQuery = searchInput.value.toLowerCase();
+            const selectedField = filterField.value;
+            const selectedCondition = filterCondition.value;
+            const filterDateValue = filterDate.value;
+        
+            console.log("Search Query:", searchQuery);
+            console.log("Selected Field:", selectedField);
+            console.log("Selected Condition:", selectedCondition);
+            console.log("Filter Date Value:", filterDateValue);
+        
+            productItems.forEach(item => {
+                const productName = item.getAttribute('data-product').toLowerCase();
+                const fieldValue = item.getAttribute(`data-${selectedField.replace('_', '-').toLowerCase()}`);
+        
+                console.log("Product Name:", productName);
+                console.log("Field Value:", fieldValue);
+        
+                // Check if the product matches the search query
+                const matchesSearch = productName.includes(searchQuery);
+        
+                let matchesFilter = true;
+        
+                if (selectedField && selectedCondition && filterDateValue) {
+                    if (fieldValue) {
+                        // Only proceed if fieldValue exists (not null or undefined)
+                        try {
+                            console.log("Field Value Before Split:", fieldValue);
+                            const fieldDateParts = fieldValue.split(" ");  // Split fieldValue (e.g., 'Aug 2021')
+                            console.log("Field Date Parts:", fieldDateParts);
+                            const fieldDate = new Date(`${fieldDateParts[0]} 01, ${fieldDateParts[1]}`);  // Create valid Date object from 'MMM YYYY'
+                            console.log("Field Date:", fieldDate);
+                            const filterDateObj = new Date(filterDateValue + '-01');  // Date from the filter input
+                            console.log("Filter Date Object:", filterDateObj);
+        
+                            switch (selectedCondition) {
+                                case 'equal':
+                                    matchesFilter = fieldDate.getTime() === filterDateObj.getTime();
+                                    break;
+                                case 'greater':
+                                    matchesFilter = fieldDate.getTime() > filterDateObj.getTime();
+                                    break;
+                                case 'less':
+                                    matchesFilter = fieldDate.getTime() < filterDateObj.getTime();
+                                    break;
+                            }
+                            console.log("Matches Filter:", matchesFilter);
+                        } catch (error) {
+                            console.error('Error parsing date:', error);
+                            matchesFilter = false;
+                        }
+                    } else {
+                        matchesFilter = false;  // If fieldValue is null, mark it as no match
+                    }
+                }
+        
+                console.log("Matches Search:", matchesSearch);
+                console.log("Matches Filter:", matchesFilter);
+        
+                if (matchesSearch && matchesFilter) {
+                    item.style.display = 'block';  // Show the product
+                } else {
+                    item.style.display = 'none';  // Hide the product
+                }
+            });
+        }
+        
+        
+
+        searchInput.addEventListener('input', filterProducts);
+        filterButton.addEventListener('click', filterProducts);
+    </script>
+</body>
+</html>
